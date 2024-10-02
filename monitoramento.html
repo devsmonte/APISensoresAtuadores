@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard de Gerenciamento</title>
+    <link href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f4f4f9;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #333;
+        }
+        h1 {
+            text-align: center;
+            font-size: 36px; /* Aumenta o tamanho da fonte */
+            margin-bottom: 10px;
+            color: #2c3e50;
+            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2); /* Adiciona sombra ao texto */
+        }
+        h2 {
+            text-align: left; /* Alinha à esquerda */
+            font-size: 28px; /* Aumenta o tamanho da fonte */
+            margin-top: 30px;
+            margin-bottom: 10px;
+            color: #2980b9;
+            border-bottom: 2px solid #2980b9; /* Adiciona uma linha embaixo do subtítulo */
+            padding-bottom: 5px; /* Adiciona um espaço embaixo do texto */
+            width: 80%; /* Define a largura do subtítulo */
+        }
+        table {
+            border-collapse: collapse;
+            margin: 20px 0;
+            width: 80%;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.2);
+            border-radius: 8px;
+            overflow: hidden;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 12px;
+            text-align: center;
+            transition: background-color 0.3s; /* Transição para o efeito de destaque */
+        }
+        th {
+            background-color: #2980b9;
+            color: white;
+            font-weight: bold;
+        }
+        tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+        tr:hover td {
+            background-color: #e1e1e1; /* Efeito de destaque ao passar o mouse */
+        }
+        .alert {
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            display: inline-block;
+            margin: 0 auto;
+        }
+        .alert.green {
+            background-color: #2ecc71;
+        }
+        .alert.red {
+            background-color: #e74c3c;
+        }
+        button {
+            background-color: #2980b9;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            padding: 10px 15px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #3498db;
+        }
+        @media (max-width: 768px) {
+            table {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>Dashboard de Gerenciamento</h1>
+    
+    <h2>Gerenciamento de Atuadores</h2>
+    <table id="atuadoresTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Status</th>
+                <th>Ações</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Os atuadores serão carregados aqui -->
+        </tbody>
+    </table>
+
+    <h2>Gerenciamento de Sensores</h2>
+    <table id="sensoresTable">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Nome</th>
+                <th>Temperatura</th>
+                <th>Umidade</th>
+                <th>Alertas de Temperatura</th>
+                <th>Alertas de Umidade</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Os sensores serão carregados aqui -->
+        </tbody>
+    </table>
+
+    <script>
+        // Função para buscar todos os atuadores
+        async function fetchAtuadores() {
+            try {
+                const response = await fetch('http://localhost:3000/atuadores');
+                const atuadores = await response.json();
+
+                const tableBody = document.getElementById('atuadoresTable').getElementsByTagName('tbody')[0];
+                tableBody.innerHTML = '';
+
+                atuadores.forEach(atuador => {
+                    const row = tableBody.insertRow();
+                    row.insertCell(0).textContent = atuador.id;
+                    row.insertCell(1).textContent = atuador.nome;
+                    row.insertCell(2).textContent = atuador.status === 1 ? 'Ligado' : 'Desligado';
+
+                    const actionCell = row.insertCell(3);
+                    const button = document.createElement('button');
+                    button.textContent = atuador.status === 1 ? 'Desligar' : 'Ligar';
+                    button.onclick = () => toggleStatus(atuador.id, atuador.status);
+                    actionCell.appendChild(button);
+                });
+            } catch (error) {
+                console.error('Erro ao buscar atuadores:', error);
+            }
+        }
+
+        // Função para alternar o status de um atuador
+        async function toggleStatus(id, currentStatus) {
+            const newStatus = currentStatus === 1 ? 0 : 1;
+
+            try {
+                const response = await fetch(`http://localhost:3000/atuadores/${id}`, {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ status: newStatus })
+                });
+
+                if (response.ok) {
+                    fetchAtuadores();
+                } else {
+                    const errorData = await response.json();
+                    alert(errorData.error);
+                }
+            } catch (error) {
+                console.error('Erro ao atualizar status do atuador:', error);
+            }
+        }
+
+        // Função para buscar todos os sensores
+        async function fetchSensores() {
+            try {
+                const response = await fetch('http://localhost:3000/sensores');
+                const sensores = await response.json();
+
+                const tableBody = document.getElementById('sensoresTable').getElementsByTagName('tbody')[0];
+                tableBody.innerHTML = '';
+
+                sensores.forEach(sensor => {
+                    const row = tableBody.insertRow();
+                    row.insertCell(0).textContent = sensor.id;
+                    row.insertCell(1).textContent = sensor.nome;
+                    row.insertCell(2).textContent = sensor.temperatura;
+                    row.insertCell(3).textContent = sensor.umidade;
+
+                    const alertTempCell = row.insertCell(4);
+                    const alertHumCell = row.insertCell(5);
+                    const alertTemp = document.createElement('div');
+                    const alertHum = document.createElement('div');
+
+                    if (sensor.alerta_temperatura === 1) {
+                        alertTemp.className = 'alert red';
+                        playAlertSound(); // Toca o som quando o alerta está ativo
+                    } else {
+                        alertTemp.className = 'alert green';
+                    }
+
+                    if (sensor.alerta_umidade === 1) {
+                        alertHum.className = 'alert red';
+                        playAlertSound(); // Toca o som quando o alerta está ativo
+                    } else {
+                        alertHum.className = 'alert green';
+                    }
+
+                    alertTempCell.appendChild(alertTemp);
+                    alertHumCell.appendChild(alertHum);
+                });
+            } catch (error) {
+                console.error('Erro ao buscar sensores:', error);
+            }
+        }
+
+        // Função para tocar som de alerta
+        function playAlertSound() {
+            const audio = new Audio('http://www.soundjay.com/button/sounds/beep-07.mp3');
+            audio.play();
+        }
+
+        // Chama as funções para buscar atuadores e sensores a cada segundo
+        setInterval(() => {
+            fetchAtuadores();
+            fetchSensores();
+        }, 1000);
+    </script>
+</body>
+</html>
